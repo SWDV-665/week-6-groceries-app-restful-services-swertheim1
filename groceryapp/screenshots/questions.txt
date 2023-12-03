@@ -1,0 +1,12 @@
+
+When you submit this assignment here in Canvas, I would like you to answer the following question(s):
+
+    1. How many hours do you estimate you used completing this assignment?
+	~ 30
+	
+    2. What was easiest for you when completing this assignment?
+	getting the share feature to work
+	
+    3. What was the most difficult challenge you experienced when completing this assignment?
+	getting Android Studio to play nice. I had a really hard time getting android studio to run the app. But I finally did it. 
+    I probably spent ~20 hours figuring it out. I am still not sure why it finally worked.  
