@@ -46,7 +46,7 @@ export class GroceriesService {
 
   addItem(item: any) {
     console.log('addItem function in grocery.service.ts.', item)
-    this.http.post(this.baseUrl + '/api/groceries', item.name).subscribe(response => {
+    this.http.post(this.baseUrl + '/api/groceries', item).subscribe(response => {
       this.items = response;
       this.dataChangeSubject.next(true);
     }, 

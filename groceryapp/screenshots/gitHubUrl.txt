@@ -1,1 +1,1 @@
-https://github.com/SWDV-665/week-5-ionic-native-swertheim1
+https://github.com/SWDV-665/week-6-groceries-app-restful-services-swertheim1
