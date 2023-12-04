@@ -7,10 +7,11 @@ import {
 } from '@ionic/angular/standalone';
 import { NgFor, NgIf } from '@angular/common';
 import { addIcons } from 'ionicons';
-import { add, create, trash } from 'ionicons/icons';
-import { GroceryServiceService } from '../grocery-service.service';
+import { add, create, trash, share } from 'ionicons/icons';
+import { GroceriesService } from '../providers/grocery.service';
 import { Share, ShareOptions } from '@capacitor/share';
-
+import { InputDialogService } from '../providers/input-dialog-service';
+import { catchError } from 'rxjs';
 
 @Component({
   selector: 'app-grocery',
@@ -22,71 +23,69 @@ import { Share, ShareOptions } from '@capacitor/share';
 
 })
 
-
-
 // Grocery Items
 export class Grocery {
   title = "Grocery"
-  presentToast: any;
+  items: any = []
+  errorMessage: string | undefined;
 
 
   // constructor
   constructor(
     private toastController: ToastController,
     public alertController: AlertController,
-    public dataService: GroceryServiceService, ) {
-    addIcons({ add, create, trash });
-  }
-
-  
-  loadItems() {
-    return this.dataService.getItems();
-  }
-
-  // function that logs a remove-item msg to the console when clicked
-  async removeItem(item: any, index: number) {
-    console.log("removing item - ", item.name, "index: ", index);
-
-    // toast is supposed to popup when the button is clicked.   
-    const toast = await this.toastController.create({
-      message: 'Removing item number  ' + Number(index + 1),
-      duration: 3000
-    });
-
-    await toast.present();
-    this.dataService.removeItem(index)
-  }
-
-  // function to add an item
-  addItem() {
-    console.log("Adding an Item");
-    this.showAddItemPrompt();
-  }
-
-  // function that shares-item msg to the console when clicked
-  async shareItem(item: any, index: number) {
-    console.log("Sharing item - ", item.name, "index: ", index);
-    // toast is supposed to popup when the button is clicked.   
-    const toast = await this.toastController.create({
-      message: 'Sharing item number  ' + Number(index + 1),
-      duration: 3000
-    });
-    await toast.present();
+    public dataService: GroceriesService, 
+    public inputDialogService: InputDialogService,) 
     
-    await Share.share({
-      text: "Grocery Item: " + item.name  + " - Quantity: " + item.quantity,
-      title: "Shared via Grocery App",
-      dialogTitle: 'Share Grocery Item',
-      
+    {
+    addIcons({ add, create, trash, share });
+    this.dataService.getItems().subscribe((items: object[]) => {
+      this.items = items;
+    });
+    
+    dataService.dataChanged$.subscribe((dataChanged: boolean) => {
+      this.loadItems();
     })
-    
-    
+  }
 
-    
 
+  ngOnInit() {
+    
+    this.loadItems();
+    console.log('Type of items:', typeof this.items);
+    // this.dataService.dataChanged$.subscribe((dataChanged: boolean) => {
+    //   this.loadItems();
+    // });
+  }
+
+  loadItems() {
+    this.dataService.getItems().pipe(
+      catchError((error) => {
+        console.error('Error loading data:', error);
+        return []; // Return an empty array in case of an error
+      })
+    ).subscribe((response: any) => {
+      // Check if the response is an object with a 'length' property (array-like)
+      // If true, convert it to an array; otherwise, keep the response as is
+      this.items = response && response.length !== undefined ? Array.from(response) : response; // Assign the array to the items variable
+    });
+  }
+
+     
+
+  removeItem(item: any) {
+    console.log('Removing item from list ..', item.name);
+    this.dataService.removeItem(item);
+    this.presentToast(`${item.name} was deleted.`)
+  }
+
+
+   // function to add an item
+  addItem() {
+    console.log('Adding item to list ..')
+    this.inputDialogService.showPrompt()
     
   }
-  
 
   // function to display the add Item using alert controller
   async showAddItemPrompt() {
@@ -124,39 +123,68 @@ export class Grocery {
     await prompt.present();
   }
 
-
   // function that logs a remove-item msg to the console when clicked
-  async editItem(item: any, index: number) {
-    console.log("editing item - ", item.name, "index: ", index);
+  async editItem(item: any, index: number, id: any) {
+    console.log("editing item - ", item.name, "index: ", index, "id: ", item._id);
 
     // toast is supposed to popup when the button is clicked.   
     const toast = await this.toastController.create({
       message: 'Editing item number  ' + Number(index + 1),
+      position: 'bottom',
       duration: 3000
     });
 
     await toast.present();
-    this.showEditItemPrompt(item.name, index);
-
+    this.showEditItemPrompt(item, index, item._id);
   }
+
+  // display message via a toast popup
+  async presentToast(message: string){
+    const toast = await this.toastController.create({
+          message,
+          duration: 3000,
+          position: 'bottom'
+    });
+        await toast.present();
+  }
+    
+  // function that shares-item msg to the console when clicked
+  async shareItem(item: any, index: number) {
+    console.log("Sharing item - ", item.name, "index: ", index);
+    
+    // toast is supposed to popup when the button is clicked.   
+    const toast = await this.toastController.create({
+      message: 'Sharing item: ' + item.name,
+      duration: 3000
+    });
+    await toast.present();
+    
+    await Share.share({
+      text: "Grocery Item: " + item.name  + " - Quantity: " + item.quantity,
+      title: "Shared via Grocery App",
+      dialogTitle: 'Share Grocery Item',
+      
+    })
+  }
+
 // function to display the edit item using an alert controller
-  async showEditItemPrompt(item: any, index: number) {
-    console.log(item, 'item number: ', index + 1);
+  async showEditItemPrompt(item: any, index: number, id: any) {
+    console.log(item, 'item number: ', index + 1, id);
     // console.log('item.name ', item, 'index ', index)      // FOR TESTING 
 
     const prompt = await this.alertController.create({
 
-      header: "Edit item",
+      header: "Edit the item..",
       inputs: [
         {
           name: 'name',
+          value: item.name,
           placeholder: 'Name',
-          value: item.name
         },
         {
           name: 'quantity',
+          value: item.quantity,
           placeholder: 'Quantity',
-          value: item.quantity
         }
       ],
       buttons: [
@@ -169,15 +197,12 @@ export class Grocery {
         {
           text: 'Update',
           handler: (item: any) => {
-            console.log('Saved clicked', item, 'Quantity', item.quantity);
-            this.dataService.editItem(item, index)
-
+            console.log('Update clicked', item, 'Quantity', item.quantity, 'ID: ', item._id);
+            this.dataService.editItem(item, index, id)
           }
         }
       ]
     })
     await prompt.present();
   }
-
-
 }
