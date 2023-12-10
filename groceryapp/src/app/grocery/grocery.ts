@@ -76,7 +76,7 @@ export class Grocery {
   removeItem(item: any) {
     console.log('Removing item from list ..', item.name);
     this.dataService.removeItem(item);
-    this.presentToast(`${item.name} deleted.`)
+    this.presentToast(`${item.name} was deleted.`)
   }
 
 
